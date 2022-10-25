@@ -1,0 +1,131 @@
+#include<dirent.h>
+#include
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+void ps(long long size);
+int if_file(char fileName);
+long long fs(const char path);
+int read(chartpath,int &file,int &dir,long long &size);
+void set_error_dir(charstr);
+void pathc(char*str);
+
+char *direrror[100];
+int dec=0;
+int if_file(char *fileName)
+{
+struct stat s;
+if (stat(fileName, &s) == 0)
+{
+ if (s.st_mode & S_IFDIR)
+{
+ return 2;
+ }
+else if (s.st_mode & S_IFREG)
+{
+return 1;
+ }
+else
+{
+return 0;
+ }
+}
+}
+
+long long fs(const char *path)
+{
+int handle = open(path, O_RDWR);
+long long a=lseek64(handle,0,SEEK_END);
+close(handle);
+return a;
+}
+
+void pathc(char*str)
+{
+int a=strlen(str);
+if(str[a-1]==’/’)
+{
+str[a-1]=0;
+}
+}
+
+void set_error_dir(char*str)
+{
+char ep=(char)malloc(500);
+direrror[dec]=ep;
+dec++;
+memcpy(ep,str,strlen(str));
+}
+
+int read(char*tpath,int &file,int &dir,long long &size)
+{
+char path[1000]="";
+memmove(path,tpath,strlen(tpath));
+pathc(path);
+// printf(“获取文件夹:%s\n”, path);
+DIR *R = opendir(path);
+if (R == NULL)
+{
+set_error_dir(path);
+//printf(“文件夹:%s 获取失败\n”, path);
+return 0;
+}
+struct  dirent * dirp;
+while ((dirp = readdir®) != NULL)
+{
+char str[1000] = “”;
+sprintf(str, “%s/%s”, path, dirp->d_name);
+switch (if_file(str))
+{
+case 1:
+file++;
+size+=fs(str);
+printf(“文件:%s\n”, str);
+break;
+case 2:
+dir++;
+printf(“文件夹:%s\n”, str);
+if(read(str, file, dir,size))
+{
+
+}
+
+void ps(long long size)
+{
+printf("%ld B\n",size);
+printf("%.3f KB\n",(float)size/1024);
+printf("%.3f MB\n",(float)size/(10241024));
+printf("%.3f GB\n",(float)size/(102410241024));
+// printf("%.10f TB\n",(float)size/(1024102410241024));
+}
+
+int printdir(char*path)
+{
+int file = 0, dir = 0;
+long long size=0;
+read(path, file, dir,size);
+printf(“共有: %d 个文件夹\n”, dir);
+printf(“共有: %d 个文件\n”, file);
+ps(size);
+printf(“共有: %d 个文件夹读取失败!\n”, dec);
+for(int i=0;i<dec;i++)
+{
+printf(“读取失败的文件夹%d:%s\n”,i+1,direrror[i]);
+free(direrror[i]);
+direrror[i]=0;
+
+}
+
+int main(int argv,char**argc)
+{
+argc++;
+while(*argc)
+{
+printdir(*argc);
+argc++;
+}
+
+}
